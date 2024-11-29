@@ -44,6 +44,9 @@ pip install -r requirements.txt  # 如需微信通知
 ```
 
 ### 2. 配置
+```bash
+cp config.example.json config/config.json
+```
 编辑config/config.json配置文件，下面有配置说明
 
 ### 3. 启动
