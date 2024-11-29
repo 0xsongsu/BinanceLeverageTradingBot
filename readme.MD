@@ -37,7 +37,7 @@
 
 ### 1. 安装
 ```bash
-git clone <repository-url>
+git clone <https://github.com/0xsongsu/BinanceLeverageTradingBot.git>
 cd binance-leverage-trading-bot
 npm install
 pip install -r requirements.txt  # 如需微信通知
