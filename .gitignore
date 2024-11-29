@@ -1,0 +1,31 @@
+# 配置文件
+config.json
+config/*.json
+!config/config.example.json
+
+# 日志
+logs/
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+wechat.pkl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 操作系统
+.DS_Store
+Thumbs.db

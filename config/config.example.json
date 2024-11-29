@@ -1,0 +1,69 @@
+{
+    "apiKey": "your_binance_api_key",
+    "apiSecret": "your_binance_api_secret",
+    "trading": {
+      "scanning": {
+        "positionInterval": 30000,
+        "priceInterval": 30000,
+        "minPositionValue": 100,
+        "priceCheckInterval": 60000,
+        "excludedPairs": ["BTCUSDT"]
+      },
+      "globalSettings": {
+        "riskRatioThreshold": 1.7,
+        "monitorInterval": 60000
+      },
+      "strategy": {
+        "addPositionPricePercent": 1,
+        "addPositionProfitRatio": 0.15,
+        "minAddPositionInterval": 60000,
+        "maxAddPositionTimes": 100,
+        "minAddPositionAmount": 10
+      },
+      "takeProfitStrategy": {
+        "enabled": true,
+        "strategyType": "A",
+        "strategies": {
+          "incrementalTakeProfit": {
+            "priceIncrementPercent": 1,
+            "sellPositionPercent": 2
+          },
+          "totalProfitTakeProfit": {
+          "levels": [
+            {
+              "profitPercent": 100,
+              "sellPositionPercent": 20
+            },
+            {
+              "profitPercent": 150,
+              "sellPositionPercent": 30
+            },
+            {
+              "profitPercent": 200,
+              "sellPositionPercent": 40
+            },
+            {
+              "profitPercent": 250,
+              "sellPositionPercent": 50
+            },
+            {
+              "profitPercent": 300,
+              "sellPositionPercent": 100
+            }
+            ]
+          }
+        }
+      }
+    },
+    "notification": {
+      "telegram": {
+        "enabled": true,
+        "botToken": "your_telegram_bot_token",
+        "chatId": "your_telegram_chat_id"
+      },
+      "wechat": {
+        "enabled": false,
+        "receiverName": "your_wechat_receiver"
+      }
+    }
+  }
