@@ -307,15 +307,19 @@ class AdvancedLeverageTradingBot {
   
         // 计算盈利和加仓金额
         const positionProfit = (confirmPrice - lastPosition.entryPrice) * position.quantity;
-        if (positionProfit <= 0) {
-          console.log(`${symbol} 当前无盈利，不执行加仓`);
-          return;
-        }
-  
-        // 计算加仓金额
-        let addAmount = positionProfit * this.config.trading.strategy.addPositionProfitRatio;
-        const minAddAmount = this.config.trading.strategy.minAddPositionAmount || 10;
+        let addAmount;
         
+        if (positionProfit <= 0) {
+          // 亏损情况：使用亏损额的15%作为加仓金额
+          addAmount = Math.abs(positionProfit) * 0.15;
+          console.log(`${symbol} 当前亏损 ${Math.abs(positionProfit).toFixed(2)} USDT，使用15%作为加仓金额: ${addAmount.toFixed(2)} USDT`);
+        } else {
+          // 盈利情况：使用配置的比例计算加仓金额
+          addAmount = positionProfit * this.config.trading.strategy.addPositionProfitRatio;
+        }
+
+        // 检查最小加仓金额
+        const minAddAmount = this.config.trading.strategy.minAddPositionAmount || 10;
         if (addAmount < minAddAmount) {
           console.log(`${symbol} 计算的加仓金额 ${addAmount.toFixed(2)} USDT 小于最小要求，使用最小加仓金额 ${minAddAmount} USDT`);
           addAmount = minAddAmount;
@@ -583,7 +587,7 @@ async initializePositionData() {
       
       // 检查是否是被排除的币对
       if (this.isExcludedPair(symbol)) {
-        console.log(`💡 ${symbol} 在排除列表中，不初始化监控`);
+        console.log(`💡 ${symbol} 在排除列表中，不��始化监控`);
         continue;
       }
 

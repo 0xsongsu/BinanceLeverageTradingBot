@@ -82,6 +82,65 @@ class PositionScanService extends EventEmitter {
   getAllPositions() {
     return Array.from(this.knownPositions.values());
   }
+
+  async checkAndAddPosition(asset) {
+    try {
+      const profitInfo = await this.accountService.getPositionProfitInfo(asset);
+      
+      // 检查是否需要加仓
+      if (!this.shouldAddPosition(profitInfo)) {
+        return false;
+      }
+
+      // 获取建议加仓金额
+      const amount = profitInfo.suggestedAmount || this.config.defaultAmount;
+
+      // 执行加仓
+      await this.orderService.addPosition(asset, amount);
+      
+      // 发送通知
+      await this.notificationService.sendAddPositionNotification(asset, profitInfo);
+      
+      return true;
+    } catch (error) {
+      console.error(`检查${asset}加仓失败:`, error);
+      return false;
+    }
+  }
+
+  shouldAddPosition(profitInfo) {
+    // 移除盈利检查，只保留其他必要的检查条件
+    if (!profitInfo) return false;
+    
+    // 检查加仓次数是否超过限制
+    if (profitInfo.addPositionCount >= this.config.maxAddPositionCount) {
+      console.log(`${profitInfo.asset}已达到最大加仓次数: ${profitInfo.addPositionCount}`);
+      return false;
+    }
+    
+    // 检查距离上次加仓时间是否足够
+    const lastOrderTime = new Date(profitInfo.lastOrderTime);
+    const timeSinceLastOrder = Date.now() - lastOrderTime.getTime();
+    if (timeSinceLastOrder < this.config.minAddPositionInterval) {
+      console.log(`${profitInfo.asset}距离上次加仓时间不足`);
+      return false;
+    }
+
+    // 如果有亏损且有建议加仓金额，则允许加仓
+    if (profitInfo.profit < 0 && profitInfo.suggestedAmount > 0) {
+      console.log(`${profitInfo.asset}当前亏损，建议加仓金额: ${profitInfo.suggestedAmount}`);
+      return true;
+    }
+
+    // 其他情况检查价格回调百分比
+    const priceDropPercentage = ((profitInfo.lastPrice - profitInfo.currentPrice) / profitInfo.lastPrice) * 100;
+    if (priceDropPercentage >= this.config.addPositionThreshold) {
+      return true;
+    }
+
+    console.log(`${profitInfo.asset}不满足加仓条件`);
+    return false;
+  }
 }
 
 module.exports = PositionScanService;

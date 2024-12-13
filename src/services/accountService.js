@@ -128,21 +128,24 @@ class AccountService {
         throw new Error('获取订单历史失败: 空响应');
       }
   
-      // 处理订单数据，只看已成交的买单
-      const buyOrders = response.data
-        .filter(order => order.side === 'BUY' && order.status === 'FILLED')
+      // 处理订单数据，修改为获取所有已成交订单
+      const filledOrders = response.data
+        .filter(order => order.status === 'FILLED')
         .sort((a, b) => b.time - a.time); // 按时间降序排序
-  
+
+      const buyOrders = filledOrders
+        .filter(order => order.side === 'BUY');
+
       let totalQuantity = 0;
       let totalCost = 0;
       let addPositionCount = 0;
-  
-      // 获取最后一次成交的买单价格
-      const lastBuyOrder = buyOrders[0]; // 最近的买单
-      const lastBuyPrice = lastBuyOrder 
-        ? parseFloat(lastBuyOrder.cummulativeQuoteQty) / parseFloat(lastBuyOrder.executedQty)
+
+      // 获最后一次成交的价格（无论买卖）
+      const lastOrder = filledOrders[0]; // 最近的成交订单
+      const lastBuyPrice = lastOrder 
+        ? parseFloat(lastOrder.cummulativeQuoteQty) / parseFloat(lastOrder.executedQty)
         : 0;
-  
+
       // 计算开仓均价 (使用所有订单)
       for (const order of buyOrders) {
         const quantity = parseFloat(order.executedQty);
@@ -174,8 +177,9 @@ class AccountService {
         addPositionCount,
         profit: totalProfit,
         profitPercentage,
-        lastOrderTime: lastBuyOrder ? lastBuyOrder.time : 0,
-        lastBuyPrice // 最后成交价格
+        lastOrderTime: lastOrder ? lastOrder.time : 0,
+        lastBuyPrice,
+        lastOrderSide: lastOrder ? lastOrder.side : null  // 添加最后订单的方向信息
       };
   
       // 更新缓存
@@ -254,16 +258,25 @@ class AccountService {
         throw new Error('未找到持仓信息');
       }
 
+      // 计算当前利润（USDT）
+      const currentProfit = (currentPrice - orderInfo.entryPrice) * position.quantity;
+      
+      // 计算建议加仓金额
+      // 如果是亏损状态，取亏损额的15%作为建议加仓金额
+      const suggestedAmount = currentProfit < 0 ? Math.abs(currentProfit) * 0.15 : 0;
+
       return {
         asset,
         entryPrice: orderInfo.entryPrice,
-        lastBuyPrice: orderInfo.lastBuyPrice,
+        lastPrice: orderInfo.lastBuyPrice,
+        lastOrderSide: orderInfo.lastOrderSide,
         currentPrice: currentPrice,
         quantity: position.quantity,
         value: position.quantity * currentPrice,
-        profit: (currentPrice - orderInfo.entryPrice) * position.quantity,
+        profit: currentProfit,
         profitPercentage: ((currentPrice - orderInfo.entryPrice) / orderInfo.entryPrice) * 100,
-        addPositionCount: orderInfo.addPositionCount
+        addPositionCount: orderInfo.addPositionCount,
+        suggestedAmount: parseFloat(suggestedAmount.toFixed(2)) // 保留2位小数
       };
     } catch (error) {
       console.error(`获取${asset}利润信息失败:`, error.message);
